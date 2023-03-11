@@ -1,0 +1,33 @@
+data_root:
+  # KITTI sequences root
+  data_root_folder: "/media/fu/696599CB76F9EC70/KITTI/dataset/sequences"
+
+extractor_config:
+  seqs: ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"]
+  pretrained_bevnet_model: "./models/bevnet.ckpt"
+  batch_num: 1
+
+training_config:
+  # KITTI sequences for training
+  training_seqs: ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"]
+  # training log folder
+  log_folder: "./log"
+  # pretrained model
+  pretrained_vlad_model: "./models/vlad.ckpt"
+  pos_threshold: 10
+  neg_threshold: 50
+  batch_size: 32
+  epoch: 100000
+
+test_config:
+  # KITTI sequence 00 for evaluation
+  seq: "07"
+  # pretrained model
+  test_bevnet_model: "./models/bevnet.ckpt"
+  test_vlad_model: "./models/vlad.ckpt"
+  th_min: 0
+  th_max: 10
+  th_max_pre: 10
+  skip: 50
+  batch_num: 16
+
