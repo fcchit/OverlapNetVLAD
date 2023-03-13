@@ -17,7 +17,7 @@ if p not in sys.path:
 from tools.database import kitti_dataset
 from modules.loss import quadruplet_loss
 from modules.overlapnetvlad import vlad_head
-from evaluate.evaluate import evaluate_vlad
+from evaluate import evaluate
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -104,7 +104,7 @@ def train(config):
 
                 batch_num += 1
 
-        recall = evaluate.evaluate_kitti()
+        recall = evaluate.evaluate_vlad(vlad)
         print("EVAL RECALL:", recall)
         writer.add_scalar("RECALL",
                           recall,
