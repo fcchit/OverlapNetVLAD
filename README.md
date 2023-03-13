@@ -8,9 +8,9 @@ OverlapNetVLAD is a coase-to-fine framework for LiARD-based place recognition, w
 
 ## Instructions
 
-This code has been tested on
+This code has been tested on Ubuntu 18.04 (PyTorch 1.12.1, CUDA 10.2, GeForce GTX 1080Ti).
 
-- Python 3.8.13, PyTorch 1.12.1, CUDA 10.2, GeForce GTX 1080Ti
+Pretrained models in [here](https://drive.google.com/drive/folders/1LEGhH38SB9Y7ia_ovYtQ3NzqRMfwJCt1?usp=sharing).
 
 ### Requirments
 
@@ -47,6 +47,6 @@ Thanks to the source code of some great works such as [pointnetvlad](https://git
 
 ## Todo
 
-- [ ] upload pretrained models
+- [x] upload pretrained models
 - [ ] add pictures
 - [ ] ...

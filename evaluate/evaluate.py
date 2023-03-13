@@ -8,8 +8,9 @@ import os
 p = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 if p not in sys.path:
     sys.path.append(p)
-from tools.utils import utils
+
 from modules.overlapnetvlad import vlad_head, overlap_head
+from tools.utils import utils
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -112,8 +113,7 @@ def evaluate_overlapnetvlad(vlad, overlapnetvlad, topk=25, topn=1):
 
     vlad.eval()
     fea_folder = os.path.join(root, seq, "BEV_FEA")
-    feature_files = os.listdir(fea_folder)
-    feature_files.sort()
+    feature_files = sorted(os.listdir(fea_folder))
     feature_files = [os.path.join(fea_folder, v) for v in feature_files]
     vlad_arr = generate_descriptors(vlad, fea_folder, batch_num)
 
@@ -150,7 +150,8 @@ def evaluate_overlapnetvlad(vlad, overlapnetvlad, topk=25, topn=1):
             for j in range(topk):
                 feaj = utils.load_npy_files([feature_files[j]])
                 feaj = torch.from_numpy(feaj).to(device)
-                overlap, _ = overlapnetvlad(torch.cat([feai, feaj]).permute(0,2,3,1))
+                overlap, _ = overlapnetvlad(
+                    torch.cat([feai, feaj]).permute(0, 2, 3, 1))
                 scores[j] = overlap.detach().cpu().numpy()
 
             for n in range(topn):
@@ -169,14 +170,18 @@ def evaluate_overlapnetvlad(vlad, overlapnetvlad, topk=25, topn=1):
 if __name__ == '__main__':
     vlad = vlad_head().to(device)
     checkpoint = torch.load(os.path.join(p, "./models/vlad.ckpt"))
-    vlad.load_state_dict(checkpoint['state_dict_vlad'])
-    
+    vlad.load_state_dict(checkpoint['state_dict'])
+
     # print("recall@N\n", evaluate_vlad(vlad, topk=25))
 
     overlap = overlap_head(32).to(device)
-    checkpoint = torch.load(os.path.join(p, "./models/bevnet.ckpt"))
-    overlap.load_state_dict(checkpoint['state_dict'], strict=False)
+    checkpoint = torch.load(os.path.join(p, "./models/overlap.ckpt"))
+    overlap.load_state_dict(checkpoint['state_dict'])
 
-    print("recall@N\n", evaluate_overlapnetvlad(vlad, overlap, topk=25, topn=1))
-
-
+    print(
+        "recall@N\n",
+        evaluate_overlapnetvlad(
+            vlad,
+            overlap,
+            topk=25,
+            topn=1))
