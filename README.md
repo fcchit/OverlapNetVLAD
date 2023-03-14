@@ -4,7 +4,10 @@ This repository represents the official implementation of the paper:
 
 **OverlapNetVLAD: A Coarse-to-Fine Framework for LiDAR-based Place Recognition**
 
+
 OverlapNetVLAD is a coase-to-fine framework for LiARD-based place recognition, which use global descriptors to propose place candidates, and use overlap prediction to determine the final match.
+
+[[Paper]](https://arxiv.org/abs/2303.06881)
 
 ## Instructions
 
@@ -44,6 +47,21 @@ the function **evaluate_vlad** is the evaluation of the coarse seaching method u
 
 Thanks to the source code of some great works such as [pointnetvlad](https://github.com/mikacuy/pointnetvlad), [PointNetVlad-Pytorch
 ](https://github.com/cattaneod/PointNetVlad-Pytorch), [OverlapTransformer](https://github.com/haomo-ai/OverlapTransformer) and so on.
+
+
+## Citation
+
+If you find this repo is helpful, please cite:
+
+
+```
+@InProceedings{Fu_2023_OverlapNetVLAD,
+author = {Fu, Chencan and Li, Lin and Peng, Linpeng and Ma, Yukai and Zhao, Xiangrui and Liu, Yong},
+title = {OverlapNetVLAD: A Coarse-to-Fine Framework for LiDAR-based Place Recognition},
+journal={arXiv preprint arXiv:2303.06881},
+year={2023}
+}
+```
 
 ## Todo
 
