@@ -27,8 +27,11 @@ def generate_descriptors(vlad, fea_folder, batch_num):
                         total=length // batch_num):
         batch_files = fea_files[q_index * batch_num:(q_index + 1) * batch_num]
         queries = utils.load_npy_files(batch_files)
-        input = torch.tensor(queries).float().to(device)
-        vlad_out = vlad(input)
+
+        with torch.no_grad():
+            input = torch.tensor(queries).float().to(device)
+            vlad_out = vlad(input)
+
         ran = range(q_index * batch_num, (q_index + 1) * batch_num)
         vlad_arr[ran] = vlad_out.detach().cpu().numpy()
 
@@ -36,8 +39,11 @@ def generate_descriptors(vlad, fea_folder, batch_num):
     if index_edge < length:
         batch_files = fea_files[index_edge:length]
         queries = utils.load_npy_files(batch_files)
-        input = torch.tensor(queries).float().to(device)
-        vlad_out = vlad(input)
+
+        with torch.no_grad():
+            input = torch.tensor(queries).float().to(device)
+            vlad_out = vlad(input)
+
         ran = range(index_edge, length)
         vlad_arr[ran] = vlad_out.detach().cpu().numpy()
 
@@ -149,9 +155,12 @@ def evaluate_overlapnetvlad(vlad, overlapnetvlad, topk=25, topn=1):
             scores = np.zeros(topk, dtype='float32')
             for j in range(topk):
                 feaj = utils.load_npy_files([feature_files[j]])
-                feaj = torch.from_numpy(feaj).to(device)
-                overlap, _ = overlapnetvlad(
-                    torch.cat([feai, feaj]).permute(0, 2, 3, 1))
+
+                with torch.no_grad():
+                    feaj = torch.from_numpy(feaj).to(device)
+                    overlap, _ = overlapnetvlad(
+                        torch.cat([feai, feaj]).permute(0, 2, 3, 1))
+
                 scores[j] = overlap.detach().cpu().numpy()
 
             for n in range(topn):
