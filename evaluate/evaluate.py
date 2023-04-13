@@ -24,6 +24,7 @@ def generate_descriptors(vlad, fea_folder, batch_num):
     vlad_arr = np.zeros((length, 1024), dtype=np.float32)
 
     for q_index in tqdm(range(length // batch_num),
+                        desc="generating global descriptors",
                         total=length // batch_num):
         batch_files = fea_files[q_index * batch_num:(q_index + 1) * batch_num]
         queries = utils.load_npy_files(batch_files)
@@ -50,7 +51,7 @@ def generate_descriptors(vlad, fea_folder, batch_num):
     return vlad_arr
 
 
-def evaluate_vlad(vlad, topk=25):
+def evaluate_vlad(vlad, topk=1):
     config_file = os.path.join(p, './config/config.yml')
     config = yaml.safe_load(open(config_file))
 
@@ -68,39 +69,34 @@ def evaluate_vlad(vlad, topk=25):
 
     pose = np.genfromtxt(os.path.join(root.replace(
         'sequences', 'poses_semantic'), seq + '.txt'))[:, [3, 11]]
+    length = len(pose)
 
-    pos_nums = np.zeros((topk), dtype=np.int32)
-    neg_nums = np.zeros((topk), dtype=np.int32)
-    recalls = np.zeros((topk), dtype=np.float32)
-    for i in tqdm(range(len(pose)), total=len(pose)):
-        diff = pose - pose[i]
-        pos_dis = np.linalg.norm(diff, axis=1)
+    correct_at_k = np.zeros(topk)
+    whole_test_size = 0
+    for i in tqdm(range(length), desc="evaluating", total=length):
+        pos_dis = np.linalg.norm(pose - pose[i], axis=1)
 
-        max_d = np.inf
-        pos_dis[max(i - skip, 0):] = max_d
+        pos_dis[max(i - skip, 0):] = np.inf
         mask = (pos_dis < th_min)
-        pos_dis[mask] = max_d
+        pos_dis[mask] = np.inf
 
-        minid_gt = np.argmin(pos_dis)
-        temp_min = np.min(pos_dis)
-        if temp_min < th_max:
-            diff = vlad_arr - vlad_arr[i]
-            vlad_dis = np.linalg.norm(diff, axis=1)
+        mindis_gt = np.min(pos_dis)
+        if mindis_gt < th_max:
+            whole_test_size += 1
 
-            vlad_dis[max(i - skip, 0):] = max_d
-            vlad_dis[mask] = max_d
+            vlad_dis = np.linalg.norm(vlad_arr - vlad_arr[i], axis=1)
+
+            vlad_dis[max(i - skip, 0):] = np.inf
+            vlad_dis[mask] = np.inf
 
             vlad_topks = np.argsort(vlad_dis)[:topk]
 
-            for j in range(topk):
-                minid = vlad_topks[j]
-                mindis = pos_dis[minid]
-                if mindis < th_max_pre:
-                    pos_nums[j:] += 1
+            for k, k_idx in enumerate(vlad_topks):
+                dis_gt = pos_dis[k_idx]
+                if dis_gt < th_max_pre:
+                    correct_at_k[k:] += 1
                     break
-                else:
-                    neg_nums[j] += 1
-    recalls = pos_nums / (pos_nums + neg_nums)
+    recalls = correct_at_k / whole_test_size
     vlad.train()
     return recalls
 
@@ -119,59 +115,56 @@ def evaluate_overlapnetvlad(vlad, overlapnetvlad, topk=25, topn=1):
 
     vlad.eval()
     fea_folder = os.path.join(root, seq, "BEV_FEA")
+    vlad_arr = generate_descriptors(vlad, fea_folder, batch_num)
+
     feature_files = sorted(os.listdir(fea_folder))
     feature_files = [os.path.join(fea_folder, v) for v in feature_files]
-    vlad_arr = generate_descriptors(vlad, fea_folder, batch_num)
 
     pose = np.genfromtxt(os.path.join(root.replace(
         'sequences', 'poses_semantic'), seq + '.txt'))[:, [3, 11]]
     length = len(pose)
 
-    pos_nums = np.zeros((topn), dtype=np.int32)
-    neg_nums = np.zeros((topn), dtype=np.int32)
-    recalls = np.zeros((topn), dtype=np.float32)
-    for i in tqdm(range(length), total=length):
-        diff = pose - pose[i]
-        pos_dis = np.linalg.norm(diff, axis=1)
+    correct_at_n = np.zeros(topn)
+    whole_test_size = 0
+    for i in tqdm(range(length), desc="evaluating", total=length):
+        pos_dis = np.linalg.norm(pose - pose[i], axis=1)
 
-        max_d = np.inf
-        pos_dis[max(i - skip, 0):] = max_d
+        pos_dis[max(i - skip, 0):] = np.inf
         mask = (pos_dis < th_min)
-        pos_dis[mask] = max_d
+        pos_dis[mask] = np.inf
 
-        minid_gt = np.argmin(pos_dis)
-        temp_min = np.min(pos_dis)
-        if temp_min < th_max:
-            diff = vlad_arr - vlad_arr[i]
-            vlad_dis = np.linalg.norm(diff, axis=1)
+        mindis_gt = np.min(pos_dis)
+        if mindis_gt < th_max:
+            whole_test_size += 1
 
-            vlad_dis[max(i - skip, 0):] = max_d
-            vlad_dis[mask] = max_d
+            vlad_dis = np.linalg.norm(vlad_arr - vlad_arr[i], axis=1)
+
+            vlad_dis[max(i - skip, 0):] = np.inf
+            vlad_dis[mask] = np.inf
 
             vlad_topks = np.argsort(vlad_dis)[:topk]
 
+            overlap_scores = np.zeros(length, dtype='float32')
+
             feai = utils.load_npy_files([feature_files[i]])
             feai = torch.from_numpy(feai).to(device)
-            scores = np.zeros(topk, dtype='float32')
-            for j in range(topk):
-                feaj = utils.load_npy_files([feature_files[j]])
+            for k in vlad_topks:
+                feaj = utils.load_npy_files([feature_files[k]])
 
                 with torch.no_grad():
                     feaj = torch.from_numpy(feaj).to(device)
                     overlap, _ = overlapnetvlad(
                         torch.cat([feai, feaj]).permute(0, 2, 3, 1))
 
-                scores[j] = overlap.detach().cpu().numpy()
+                overlap_scores[k] = overlap.detach().cpu().numpy()
 
-            for n in range(topn):
-                minid = vlad_topks[n]
-                mindis = pos_dis[minid]
-                if mindis < th_max_pre:
-                    pos_nums[n:] += 1
+            overlap_topns = np.argsort(-overlap_scores)[:topn]
+            for n, n_idx in enumerate(overlap_topns):
+                dis_gt = pos_dis[n_idx]
+                if dis_gt < th_max_pre:
+                    correct_at_n[n:] += 1
                     break
-                else:
-                    neg_nums[n] += 1
-    recalls = pos_nums / (pos_nums + neg_nums)
+    recalls = correct_at_n / whole_test_size
     vlad.train()
     return recalls
 
