@@ -60,7 +60,7 @@ def train(config):
     
     if not pretrained_vlad_model == "":
         checkpoint = torch.load(pretrained_vlad_model)
-        vlad.load_state_dict(checkpoint['state_dict_vlad'])
+        vlad.load_state_dict(checkpoint['state_dict'])
 
     batch_num = 0
     for i in range(epoch):
@@ -73,9 +73,9 @@ def train(config):
                                sample_batch['neg_desc'],
                                sample_batch['other_desc']], dim=0).to(device)
             out = vlad(input)
-
+            split_size = input.shape[0] // 4
             query_fea, pos_fea, neg_fea, other_fea = torch.split(
-                out, [batch_size, batch_size, batch_size, batch_size], dim=0)
+                out, split_size, dim=0)
             train_dataset.update_latent_vectors(
                 query_fea.detach().cpu().numpy(),
                 sample_batch['id'].detach().cpu().numpy())
@@ -110,7 +110,7 @@ def train(config):
                           recall,
                           global_step=batch_num)
         torch.save({'epoch': i,
-                    'state_dict_vlad': vlad.state_dict(),
+                    'state_dict': vlad.state_dict(),
                     'optimizer': optimizer.state_dict(),
                     'batch_num': batch_num},
                    os.path.join(log_folder, str(recall) + ".ckpt"))

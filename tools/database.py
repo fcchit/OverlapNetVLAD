@@ -131,17 +131,18 @@ class kitti_dataset(Dataset):
         posid = self.get_random_hard_positive(queryid)
         otherid = self.get_other_neg(queryid, negid)
 
-        query_voxel = self.load_fea(queryid)
-        pos_voxel = self.load_fea(posid)
-        neg_voxel = self.load_fea(negid)
-        other_voxel = self.load_fea(otherid)
+        query_fea = self.load_fea(queryid)
+        pos_fea = self.load_fea(posid)
+        neg_fea = self.load_fea(negid)
+        other_fea = self.load_fea(otherid)
+        # print(query_fea.shape, pos_fea.shape, neg_fea.shape, other_fea.shape)
 
         return {
             "id": queryid,
-            "query_desc": query_voxel,
-            "pos_desc": pos_voxel,
-            "neg_desc": neg_voxel,
-            "other_desc": other_voxel}
+            "query_desc": query_fea,
+            "pos_desc": pos_fea,
+            "neg_desc": neg_fea,
+            "other_desc": other_fea}
 
 
 if __name__ == "__main__":
